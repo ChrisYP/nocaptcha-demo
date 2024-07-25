@@ -2,50 +2,52 @@ import sys
 
 sys.path.append(".")
 
+import asyncio
 import random
 import re
 
 from curl_cffi import requests
 from pynocaptcha import KasadaCdCracker, KasadaCtCracker, PerimeterxCracker
-from utils import __TOKEN__, __PROXY__starry_keep
+
+from utils import __TOKEN__ as USER_TOKEN
+from utils import __PROXY__idea
 
 
 async def demo():
-    version = random.randint(117, 126)
-    # user_agent = f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{version}.0.0.0 Safari/537.36"
-    user_agent = f'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{version}.0.0.0 Safari/537.36'
-
-    # platform = '"macOS"' if 'Mac' in user_agent else '"Windows"'
-
+    version = 127
+    user_agent = [
+        # f'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{version}.0.0.0 Safari/537.36',
+        f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{version}.0.0.0 Safari/537.36"
+    ]
     href = 'https://arcteryx.com/ca/en/shop/mens/beta-lt-jacket-7301'
 
-    proxy = __PROXY__starry_keep()
+    proxy = __PROXY__idea
+    print(proxy)
 
     session = requests.AsyncSession()
     session.proxies.update({
         "all": proxy
     })
 
-    # try:
-    #     resp = (await session.get("https://ipinfo.io/json", headers={
-    #         "user-agent": f'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-    #     }, timeout=5)).json()
-    # except:
-    #     return
+    try:
+        resp = (await session.get("https://ipinfo.io/json", headers={
+            "user-agent": f'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        }, timeout=5)).json()
+    except:
+        return
 
-    # country = resp["country"].lower()
-    # current_ip = resp["ip"]
-    # print(country, current_ip)
+    country = resp["country"].lower()
+    current_ip = resp["ip"]
+    print(country, current_ip)
 
     px_cracker = PerimeterxCracker(
-        user_token=__TOKEN__,
+        user_token=USER_TOKEN,
         app_id='PX943r4Fb8',
-        # branch="esbiya",
         href=href,
         proxy=proxy,
         user_agent=user_agent,
-        # country=country,
-        # ip=current_ip,
+        country=country,
+        ip=current_ip,
         debug=True,
     )
     px_ret = px_cracker.crack()
@@ -57,7 +59,7 @@ async def demo():
 
     headers = {
         'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'accept-language': 'zh-CN,zh;q=0.9',
+        'accept-language': extra["accept-language"],
         'priority': 'u=0, i',
         'referer': 'https://arcteryx.com/',
         'sec-ch-ua': extra["sec-ch-ua"],
@@ -81,7 +83,7 @@ async def demo():
 
     headers = {
         'accept': '*/*',
-        'accept-language': 'zh-CN,zh;q=0.9',
+        'accept-language': extra["accept-language"],
         'priority': 'u=1',
         'referer': 'https://mcprod.arcteryx.com/149e9513-01fa-4fb0-aad4-566afd725d1b/2d206a39-8ed7-437e-a3be-862e0f06eea3/fp?x-kpsdk-v=j-0.0.0',
         'sec-ch-ua': extra["sec-ch-ua"],
@@ -108,21 +110,19 @@ async def demo():
     ips_resp = await session.get(ips_url, headers=headers)
 
     cracker = KasadaCtCracker(
-        user_token=__TOKEN__,
+        user_token=USER_TOKEN,
         href=href,
-        # branch="esbiya",
         ips_url=ips_url,
         ips_script=ips_resp.text,
         ips_headers={
             k: v for k, v in ips_resp.headers.items()
         },
+        country=country,
+        ip=current_ip,
         user_agent=user_agent,
         cookies={
             k: v for k, v in response.cookies.items()
         },
-        # country=country,
-        # ip=current_ip,
-        # proxy=proxy,
         submit=False,
         debug=True,
     )
@@ -131,7 +131,7 @@ async def demo():
     if "post_data" in ret:
         headers = {
             'accept': '*/*',
-            'accept-language': 'zh-CN,zh;q=0.9',
+            'accept-language': extra["accept-language"],
             'content-type': 'application/octet-stream',
             'origin': 'https://mcprod.arcteryx.com',
             'priority': 'u=1, i',
@@ -159,7 +159,7 @@ async def demo():
         kpsdk_ct = response.headers.get('x-kpsdk-ct')
         kpsdk_st = int(response.headers.get('x-kpsdk-st'))
         kpsdk_cd = KasadaCdCracker(
-            user_token=__TOKEN__,
+            user_token=USER_TOKEN,
             href=href,
             st=kpsdk_st,
             debug=True,
@@ -171,7 +171,7 @@ async def demo():
 
     headers = {
         'accept': '*/*',
-        'accept-language': 'zh-CN,zh;q=0.9',
+        'accept-language': extra["accept-language"],
         'content-type': 'application/json',
         'origin': 'https://arcteryx.com',
         'referer': 'https://arcteryx.com/',
@@ -215,16 +215,13 @@ async def demo():
             "blockedUrl": 'https://mcprod.arcteryx.com/graphql'
         })
         px_ret = PerimeterxCracker(
-            user_token=__TOKEN__,
+            user_token=USER_TOKEN,
             href=href,
             proxy=proxy,
-            # country=country,
-            # ip=current_ip,
-            user_agent=user_agent,
             cookies={
-                k: v for k, v in session.cookies.items()
+                k: v for k, v in session.cookies.items() if "px" in k
             },
-            did=px_cracker.extra()["did"],
+            did=extra["did"],
             captcha=captcha,
             timeout=120
         ).crack()
@@ -246,7 +243,7 @@ async def demo():
             return
 
     kpsdk_cd = KasadaCdCracker(
-        user_token=__TOKEN__,
+        user_token=USER_TOKEN,
         href=href,
         st=kpsdk_st,
         debug=True,
@@ -268,16 +265,13 @@ async def demo():
             "blockedUrl": 'https://mcprod.arcteryx.com/graphql'
         })
         px_ret = PerimeterxCracker(
-            user_token=__TOKEN__,
+            user_token=USER_TOKEN,
             href=href,
             proxy=proxy,
-            # country=country,
-            # ip=current_ip,
-            user_agent=user_agent,
             cookies={
-                k: v for k, v in session.cookies.items()
+                k: v for k, v in session.cookies.items() if "px" in k
             },
-            did=px_cracker.extra()["did"],
+            did=extra["did"],
             captcha=captcha,
             timeout=120,
             debug=True
